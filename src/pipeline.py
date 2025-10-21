@@ -15,36 +15,36 @@ load_dotenv(BASE_DIR / '.env')
 
 
 # ==============================================================
-# 1. EXTRACT (API)
+# 1. EXTRACT (API - SYSTEME & PLANETEN)
 # ==============================================================
 def fetch_exoplanets(limit=200):
     """
-    Lädt Exoplanet-Daten aus dem NASA Exoplanet Archive (PSCompPars).
+    Lädt System- und Planetendaten aus dem NASA Exoplanet Archive (PSCompPars).
     """
     api_url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
     query = f"""
         SELECT TOP {limit}
             hostname, pl_name, disc_year, sy_snum, sy_pnum,
-            st_teff, st_lum, st_age, st_met,
             pl_rade, pl_masse, pl_orbsmax, pl_orbeccen, pl_eqt, pl_insol
         FROM PSCompPars
+        WHERE sy_snum>1
     """
     params = {"query": query, "format": "csv"}
 
-    print("Lade Exoplanetendaten von NASA API...")
+    print("Lade System- & Planetendaten (PSCompPars) von NASA API...")
     try:
         r = requests.get(api_url, params=params, timeout=60)
         r.raise_for_status()
 
         if not r.text.strip():
-            raise ValueError("Leere Antwort vom NASA-Server.")
+            raise ValueError("Leere Antwort vom NASA-Server (PSCompPars).")
 
         df = pd.read_csv(io.StringIO(r.text))
-        print(f"{len(df)} Exoplaneten von NASA API geladen.")
+        print(f"{len(df)} Zeilen von PSCompPars API geladen.")
         return df
 
     except Exception as e:
-        print(f"Fehler beim Abrufen der NASA-Daten: {e}")
+        print(f"Fehler beim Abrufen der NASA-Daten (PSCompPars): {e}")
         return pd.DataFrame()
 
 
@@ -53,7 +53,7 @@ def fetch_exoplanets(limit=200):
 # ==============================================================
 def load_local_hab_data(csv_path):
     """
-    Lädt die 'hwc.csv' und extrahiert die wichtigen Spalten.
+    Lädt die 'hwc.csv' und extrahiert ergänzende Spalten (ESI, Sternbild).
     """
     print(f"Lade Habitabilitäts-Daten aus '{csv_path}'...")
     try:
@@ -80,6 +80,52 @@ def load_local_hab_data(csv_path):
         return pd.DataFrame()
     except KeyError as e:
         print(f"FEHLER: {e}.")
+        return pd.DataFrame()
+
+
+# ==============================================================
+# 2.5 EXTRACT (API - STERNE via GROUP BY)
+# ==============================================================
+def fetch_stellar_hosts():
+    """
+    Lädt Sterndaten aus 'stellarhosts'.
+    Verwendet GROUP BY und AVG(), um für jeden Stern einen einzigen,
+    eindeutigen (gemittelten) Wert für seine Attribute zu erhalten.
+    """
+    api_url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
+    query = """
+            SELECT sy_name, \
+                   hostname, \
+                   AVG(st_teff) as st_teff, \
+                   AVG(st_lum)  as st_lum, \
+                   AVG(st_age)  as st_age, \
+                   AVG(st_met)  as st_met
+            FROM stellarhosts
+            GROUP BY sy_name, hostname \
+            """
+    params = {"query": query, "format": "csv"}
+
+    print("Lade aggregierte Sterndaten (stellarhosts per GROUP BY) von NASA API...")
+    try:
+        r = requests.get(api_url, params=params, timeout=120)  # Längerer Timeout
+        r.raise_for_status()
+
+        if not r.text.strip():
+            raise ValueError("Leere Antwort vom NASA-Server (stellarhosts).")
+
+        df = pd.read_csv(io.StringIO(r.text))
+
+        # Spalten umbenennen, damit sie zu unserem DB-Schema passen
+        df_renamed = df.rename(columns={
+            'sy_name': 'system_key',  # Der System-Name (z.B. HD 23596)
+            'hostname': 'star_name'  # Der Stern-Name (z.B. HD 23596 B)
+        })
+
+        print(f"{len(df_renamed)} eindeutige Sterne von stellarhosts API geladen.")
+        return df_renamed
+
+    except Exception as e:
+        print(f"Fehler beim Abrufen der stellarhosts-Daten: {e}")
         return pd.DataFrame()
 
 
@@ -124,7 +170,7 @@ def enrich_with_description(df):
 
 
 # ==============================================================
-# 4. LOAD (POSTGRESQL - ALS KLASSE)
+# 4. LOAD (POSTGRESQL - 3NF)
 # ==============================================================
 
 class DatabaseError(Exception):
@@ -150,33 +196,46 @@ class ExoplanetDBPostgres:
 
     def _recreate_tables(self):
         """
-        Löscht alte Tabellen (falls vorhanden) und erstellt das 3NF-Schema neu.
+        Löscht alte Tabellen und erstellt das neue 3NF-Schema
+        (Systeme -> Sterne -> Planeten).
         """
         try:
             print("Setze Tabellen-Schema zurück (DROP/CREATE)...")
             self.cursor.execute("DROP TABLE IF EXISTS planeten CASCADE;")
             self.cursor.execute("DROP TABLE IF EXISTS sterne CASCADE;")
+            self.cursor.execute("DROP TABLE IF EXISTS systeme CASCADE;")
 
+            # Tabelle 1: Systeme (höchste Ebene)
             self.cursor.execute("""
-                                CREATE TABLE sterne
+                                CREATE TABLE systeme
                                 (
-                                    hostname      TEXT PRIMARY KEY,
+                                    system_key    TEXT PRIMARY KEY,
                                     sy_snum       INTEGER,
                                     sy_pnum       INTEGER,
-                                    st_teff       REAL,
-                                    st_lum        REAL,
-                                    st_age        REAL,
-                                    st_met        REAL,
                                     constellation TEXT,
                                     sy_dist_pc    REAL
                                 );
                                 """)
 
+            # Tabelle 2: Sterne (verweist auf Systeme)
+            self.cursor.execute("""
+                                CREATE TABLE sterne
+                                (
+                                    star_name  TEXT PRIMARY KEY,
+                                    system_key TEXT REFERENCES systeme (system_key) ON DELETE SET NULL,
+                                    st_teff    REAL,
+                                    st_lum     REAL,
+                                    st_age     REAL,
+                                    st_met     REAL
+                                );
+                                """)
+
+            # Tabelle 3: Planeten (verweist auf Sterne)
             self.cursor.execute("""
                                 CREATE TABLE planeten
                                 (
                                     pl_name           TEXT PRIMARY KEY,
-                                    hostname          TEXT REFERENCES sterne (hostname) ON DELETE SET NULL,
+                                    star_name         TEXT REFERENCES sterne (star_name) ON DELETE SET NULL,
                                     disc_year         INTEGER,
                                     pl_rade           REAL,
                                     pl_masse          REAL,
@@ -191,7 +250,7 @@ class ExoplanetDBPostgres:
                                 );
                                 """)
             self.connection.commit()
-            print("Tabellen 'sterne' und 'planeten' erfolgreich erstellt.")
+            print("Tabellen 'systeme', 'sterne' und 'planeten' erfolgreich erstellt.")
         except psycopg2.Error as e:
             self.connection.rollback()
             raise DatabaseError(f"Fehler beim Erstellen der Tabellen: {e}")
@@ -204,36 +263,51 @@ class ExoplanetDBPostgres:
         df_clean = df.astype(object).where(pd.notnull(df), None)
         return [tuple(row) for row in df_clean.itertuples(index=False, name=None)]
 
-    def insert_data(self, df_merged):
+    def insert_data(self, df_main_merged, df_sterne_api):
         """
-        Nimmt den gesamten gemerged DataFrame, teilt ihn auf
-        und fügt ihn in die normalisierten Tabellen 'sterne' und 'planeten' ein.
+        Teilt die DataFrames auf und fügt sie in die 3NF-Tabellen ein.
         """
-        if df_merged.empty:
-            print("Keine Daten zum Einfügen vorhanden.")
+        if df_main_merged.empty or df_sterne_api.empty:
+            print("Keine Daten zum Einfügen vorhanden (eine Quelle ist leer).")
             return
 
         try:
             self._recreate_tables()
 
+            # 1. Tabelle: Systeme
+            print("Bereite 'systeme'-Daten vor...")
+            df_systeme = df_main_merged.rename(columns={'hostname': 'system_key'})
+            system_cols = ['system_key', 'sy_snum', 'sy_pnum', 'constellation', 'sy_dist_pc']
+            df_systeme = df_systeme[system_cols].drop_duplicates(subset=['system_key']).dropna(subset=['system_key'])
+            systeme_tuples = self._dataframe_to_tuples(df_systeme)
+
+            # 2. Tabelle: Sterne
             print("Bereite 'sterne'-Daten vor...")
-            star_cols = [
-                'hostname', 'sy_snum', 'sy_pnum', 'st_teff', 'st_lum',
-                'st_age', 'st_met', 'constellation', 'sy_dist_pc'
-            ]
-            df_sterne = df_merged[star_cols].drop_duplicates(subset=['hostname']).dropna(subset=['hostname'])
+            star_cols = ['star_name', 'system_key', 'st_teff', 'st_lum', 'st_age', 'st_met']
+            df_sterne = df_sterne_api[star_cols].copy()
+            df_sterne = df_sterne[df_sterne['system_key'].isin(df_systeme['system_key'])]
+            # drop_duplicates ist hier jetzt sicher, da wir in der API schon aggregiert haben
+            df_sterne = df_sterne.drop_duplicates(subset=['star_name']).dropna(subset=['star_name'])
             sterne_tuples = self._dataframe_to_tuples(df_sterne)
 
+            # 3. Tabelle: Planeten
             print("Bereite 'planeten'-Daten vor...")
+            df_planeten = df_main_merged.rename(columns={'hostname': 'star_name'})
             planet_cols = [
-                'pl_name', 'hostname', 'disc_year', 'pl_rade', 'pl_masse',
+                'pl_name', 'star_name', 'disc_year', 'pl_rade', 'pl_masse',
                 'pl_orbsmax', 'pl_orbeccen', 'pl_eqt', 'pl_insol', 'esi',
                 'habitable', 'description_nasa', 'visualization_url'
             ]
-            df_planeten = df_merged[planet_cols].drop_duplicates(subset=['pl_name']).dropna(subset=['pl_name'])
-
-            df_planeten = df_planeten[df_planeten['hostname'].isin(df_sterne['hostname'])]
+            df_planeten = df_planeten[planet_cols].drop_duplicates(subset=['pl_name']).dropna(subset=['pl_name'])
+            df_planeten = df_planeten[df_planeten['star_name'].isin(df_sterne['star_name'])]
             planeten_tuples = self._dataframe_to_tuples(df_planeten)
+
+            # 4. Insert (Reihenfolge wichtig: Systeme -> Sterne -> Planeten)
+            print(f"Füge {len(systeme_tuples)} Systeme in DB ein...")
+            cols_systeme = ", ".join(system_cols)
+            placeholders_systeme = ", ".join(["%s"] * len(system_cols))
+            query_systeme = f"INSERT INTO systeme ({cols_systeme}) VALUES ({placeholders_systeme})"
+            self.cursor.executemany(query_systeme, systeme_tuples)
 
             print(f"Füge {len(sterne_tuples)} Sterne in DB ein...")
             cols_sterne = ", ".join(star_cols)
@@ -248,7 +322,7 @@ class ExoplanetDBPostgres:
             self.cursor.executemany(query_planeten, planeten_tuples)
 
             self.connection.commit()
-            print("Daten erfolgreich in beide Tabellen geschrieben.")
+            print("Daten erfolgreich in alle drei Tabellen geschrieben.")
 
         except (Exception, psycopg2.Error) as e:
             print(f"FEHLER beim Einfügen der Daten: {e}")
@@ -268,14 +342,13 @@ class ExoplanetDBPostgres:
         self.close_connection()
 
 
-def save_normalized_to_db(df_merged):
+def save_normalized_to_db(df_main_merged, df_sterne_api):
     """
-    Speichert den DataFrame in zwei normalisierten Tabellen (3NF)
-    unter Verwendung der ExoplanetDBPostgres-Klasse.
+    Speichert die DataFrames in drei normalisierten Tabellen (3NF).
     """
     try:
         with ExoplanetDBPostgres() as db:
-            db.insert_data(df_merged)
+            db.insert_data(df_main_merged, df_sterne_api)
     except (DatabaseError, ValueError) as e:
         print(e)
         raise DatabaseError(f"Fehler in save_normalized_to_db: {e}")
@@ -288,21 +361,27 @@ def run_pipeline():
     """
     Führt die gesamte ETL-Pipeline aus.
     """
-    print("Starte Exoplaneten ETL-Pipeline (mit DB-Klasse)...")
+    print("Starte Exoplaneten ETL-Pipeline (3NF)...")
 
-    # 1. EXTRACT (API)
-    df_nasa = fetch_exoplanets(limit=50)
+    # 1. EXTRACT (API - Systeme & Planeten)
+    df_nasa = fetch_exoplanets(limit=2000)
     if df_nasa.empty:
-        print("Pipeline gestoppt: Keine Daten von NASA API.")
+        print("Pipeline gestoppt: Keine Daten von NASA API (PSCompPars).")
         return
 
-    # 2. EXTRACT (LOKAL)
+    # 2. EXTRACT (LOKAL - Ergänzungen)
     local_csv_path = BASE_DIR / 'data' / 'hwc.csv'
     df_local = load_local_hab_data(local_csv_path)
     if df_local.empty:
-        print("Warnung: Lokale Habitabilitäts-Daten konnten nicht geladen werden.")
+        print("Warnung: Lokale Habitabilitäts-Daten (hwc.csv) konnten nicht geladen werden.")
 
-    # 3. TRANSFORM (MERGE)
+    # 2.5 EXTRACT (API - Sterne)
+    df_sterne_api = fetch_stellar_hosts()
+    if df_sterne_api.empty:
+        print("Pipeline gestoppt: Keine Sterndaten (stellarhosts) von API geladen.")
+        return
+
+    # 3. TRANSFORM (MERGE - Systeme & Planeten mit lokalen Daten)
     df_nasa['pl_name_norm'] = df_nasa['pl_name'].str.lower().str.replace(r'[\s-]+', '', regex=True)
     df_local['pl_name_norm'] = df_local['pl_name_local'].str.lower().str.replace(r'[\s-]+', '', regex=True)
 
@@ -325,7 +404,7 @@ def run_pipeline():
 
     # 5. LOAD (Normalisiert via Klasse)
     try:
-        save_normalized_to_db(df_enriched)
+        save_normalized_to_db(df_enriched, df_sterne_api)
         print("Pipeline erfolgreich abgeschlossen.")
     except Exception as e:
         print(f"Pipeline mit Fehler bei DB-Speicherung gescheitert.")
