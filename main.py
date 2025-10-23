@@ -4,13 +4,13 @@ from src.pipeline import run_pipeline
 
 if __name__ == "__main__":
 
-    print("Starte ETL-Prozess via main.py...")
+    print("Starting ETL process via main.py...")
 
     try:
-        run_pipeline()
-        # Diese Zeile wird nur bei Erfolg erreicht:
-        print("ETL-Prozess erfolgreich beendet.")
+        # Set the desired limit here, e.g. None for all
+        run_pipeline(limit=100)
+        print("ETL process finished successfully.")
 
     except Exception as e:
-        print(f"ETL-Prozess mit FEHLER beendet.")
-        sys.exit(1)
+        print(f"ETL process finished with ERROR.")
+        sys.exit(1) # Exit with error code
