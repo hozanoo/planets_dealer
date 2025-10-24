@@ -15,7 +15,6 @@ def fetch_exoplanets(limit: Optional[int] = 100) -> pd.DataFrame:
             pl_orbper, pl_orbsmax, pl_rade, pl_masse,
             pl_orbeccen, pl_eqt, pl_insol
         FROM PSCompPars
-        WHERE sy_snum > 1
     """
     query = re.sub(r'\s+', ' ', query).strip()
     params: Dict[str, Any] = {"query": query, "format": "csv"}
