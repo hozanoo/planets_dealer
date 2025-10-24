@@ -1,32 +1,28 @@
 version: "3.9"
 
 services:
-  # 1. Der Pipeline-Container vom Python Skript
-  # Dieser Service wird nicht mit 'up' gestartet, sondern manuell mit 'run'
   pipeline:
-    build: .  # Baut das Image aus dem Dockerfile im Root-Verzeichnis
+    build: .
     env_file:
-      - ./.env  # Lädt die .env-Datei für DB_HOST=db
+      - ./.env
+    volumes: # Map the local data folder to the container's data folder
+      - ./data:/app/data
     depends_on:
-      - db      # Stellt sicher, dass 'db' gestartet wird, bevor dies läuft
+      - db
 
-  # 2. Die PostgreSQL-Datenbank
   db:
     image: postgres:15
     env_file:
-      - ./.env  # Lädt die .env-Datei, um die Variablen unten zu nutzen
+      - ./.env
     environment:
-      # Setzt die Postgres-Variablen basierend auf dem Inhalt vom .env-Datei
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      # Erlaubt Zugriff vom Host-PC auf Port 5433 (z.B. für DBeaver)
       - "5433:5432"
 
-  # 3.pgAdmin zum Anschauen der DB
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin

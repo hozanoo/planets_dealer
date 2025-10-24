@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     try:
         # Set the desired limit here, e.g. None for all
-        run_pipeline(limit=100)
+        run_pipeline(limit=None)
         print("ETL process finished successfully.")
 
     except Exception as e:
