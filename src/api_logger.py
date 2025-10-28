@@ -1,3 +1,4 @@
+# src/api_logger.py
 import requests
 import pandas as pd
 import io
@@ -7,7 +8,14 @@ from typing import Dict, Any, Optional
 API_URL: str = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
 
 def fetch_exoplanets(limit: Optional[int] = 100) -> pd.DataFrame:
-    """Fetches system and planet data from PSCompPars."""
+    """
+    Fetches core planet and system data from the NASA Exoplanet Archive (PSCompPars table).
+
+    :param limit: The maximum number of rows to return (TOP N). If 0 or None, fetches all rows.
+    :type limit: Optional[int]
+    :return: A DataFrame containing planet data, with columns renamed for internal use.
+    :rtype: pd.DataFrame
+    """
     top_clause = f"TOP {limit}" if limit and limit > 0 else ""
     query: str = f"""
         SELECT {top_clause}
@@ -42,7 +50,15 @@ def fetch_exoplanets(limit: Optional[int] = 100) -> pd.DataFrame:
         return pd.DataFrame()
 
 def fetch_stellar_hosts() -> pd.DataFrame:
-    """Fetches aggregated star data from 'stellarhosts' via GROUP BY."""
+    """
+    Fetches aggregated star data from the NASA Exoplanet Archive (stellarhosts table).
+
+    Uses GROUP BY on sy_name and hostname, and AVG() on stellar parameters
+    to ensure a unique, averaged entry for each star.
+
+    :return: A DataFrame containing unique stars, with columns renamed for internal use.
+    :rtype: pd.DataFrame
+    """
     query: str = """
         SELECT
             sy_name, hostname,

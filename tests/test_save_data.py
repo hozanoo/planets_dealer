@@ -22,16 +22,25 @@ ADMIN_DB_USER = os.environ.get('DB_USER', 'postgres')
 ADMIN_DB_PASSWORD = os.environ.get('DB_PASSWORD')
 ADMIN_DB_HOST = os.environ.get('DB_HOST', 'localhost')
 ADMIN_DB_PORT = os.environ.get('DB_PORT', 5432)
-
-
 # --- Ende Test Konfiguration ---
 
 
 class TestExoplanetDBIntegration(unittest.TestCase):
+    """
+    Integration tests for the ExoplanetDBPostgres class.
+
+    These tests run against a real, temporary PostgreSQL database
+    to verify database creation, table schema, data insertion logic,
+    and constraints.
+    """
 
     @classmethod
     def setUpClass(cls):
-        """Runs ONCE before all tests: Creates the test DB."""
+        """
+        Runs ONCE before all tests in this class.
+        Connects as admin to drop (if exists) and create a fresh, empty
+        test database for all tests to use.
+        """
         print("\n--- Initialisiere Testumgebung ---")
         try:
             cls.admin_conn = psycopg2.connect(
@@ -55,7 +64,10 @@ class TestExoplanetDBIntegration(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Runs ONCE after all tests: Drops the test DB."""
+        """
+        Runs ONCE after all tests in this class.
+        Connects as admin to drop the temporary test database.
+        """
         print("\n--- Räume Testumgebung auf ---")
         try:
             conn = psycopg2.connect(
@@ -78,7 +90,10 @@ class TestExoplanetDBIntegration(unittest.TestCase):
             print(f"FEHLER beim Aufräumen der Test-DB: {e}")
 
     def setUp(self):
-        """Runs BEFORE EACH test: Connects to the test DB."""
+        """
+        Runs BEFORE EACH individual test method.
+        Connects to the clean test database and recreates the full schema.
+        """
         os.environ['DB_NAME_ORIG'] = os.environ.get('DB_NAME', '')
         os.environ['DB_NAME'] = TEST_DB_NAME
         try:
@@ -89,7 +104,10 @@ class TestExoplanetDBIntegration(unittest.TestCase):
             self.fail(f"Fehler beim Verbinden mit der Test-DB in setUp: {e}")
 
     def tearDown(self):
-        """Runs AFTER EACH test: Closes the connection."""
+        """
+        Runs AFTER EACH individual test method.
+        Closes the database connection and restores environment variables.
+        """
         if hasattr(self, 'cursor') and self.cursor:
             self.cursor.close()
         if hasattr(self, 'db') and self.db:
@@ -97,8 +115,13 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         os.environ['DB_NAME'] = os.environ.get('DB_NAME_ORIG', '')
         if 'DB_NAME_ORIG' in os.environ: del os.environ['DB_NAME_ORIG']
 
-    def _create_dummy_data(self):
-        """Creates consistent dummy DataFrames for testing."""
+    def _create_dummy_data(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Helper method to create consistent dummy DataFrames for testing.
+
+        :return: A tuple containing (df_main, df_stars)
+        :rtype: Tuple[pd.DataFrame, pd.DataFrame]
+        """
         df_main = pd.DataFrame({
             'pl_name': ['TestPlanet A', 'TestPlanet B', 'TestPlanet C'],
             'star_name_api': ['TestStar Alpha', 'TestStar Beta', 'TestStar Alpha'],
@@ -130,7 +153,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         return df_main, df_stars
 
     def test_01_insert_and_verify_data(self):
-        """Tests data insertion and verifies the result."""
+        """Tests the main 'happy path' of inserting data and verifies counts and values."""
         df_main, df_stars = self._create_dummy_data()
         self.db.insert_data(df_main, df_stars)
 
@@ -160,7 +183,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         self.assertEqual(result_C[0], 'Unknown', "Planetentyp für C sollte Unknown sein")
 
     def test_02_foreign_key_constraints(self):
-        """Tests if 'ON DELETE SET NULL' foreign key relationships work."""
+        """Tests if 'ON DELETE SET NULL' foreign key relationships work correctly."""
         df_main, df_stars = self._create_dummy_data()
         self.db.insert_data(df_main, df_stars)
 
@@ -183,7 +206,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
             self.fail(f"Löschen des Systems sollte wegen ON DELETE SET NULL möglich sein: {e}")
 
     def test_03_idempotency_check(self):
-        """Tests if multiple inserts (due to ON CONFLICT) cause no errors or duplicates."""
+        """Tests if re-running insert_data (due to ON CONFLICT) causes no errors or duplicates."""
         df_main, df_stars = self._create_dummy_data()
 
         self.db.insert_data(df_main, df_stars)
@@ -201,7 +224,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         self.assertEqual(count_after, count_before, "Anzahl der Planeten sollte nach zweitem Lauf identisch sein")
 
     def test_04_empty_dataframes_do_not_crash(self):
-        """Tests if the script can handle empty DataFrames."""
+        """Tests if the script can handle empty DataFrames without crashing."""
         df_main_empty = pd.DataFrame(columns=['pl_name', 'star_name_api'])
         df_stars_empty = pd.DataFrame(columns=['star_name', 'system_key'])
         df_main_full, df_stars_full = self._create_dummy_data()
@@ -267,7 +290,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         self.assertIsNone(self.cursor.fetchone(), "Verwaister Planet 'Orphan Planet' sollte nicht eingefügt werden")
 
     def test_07_invalid_planet_type_enum(self):
-        """Tests if an invalid ENUM value raises an error."""
+        """Tests if an invalid ENUM value raises a DatabaseError."""
         df_main, df_stars = self._create_dummy_data()
 
         df_main.loc[df_main['pl_name'] == 'TestPlanet A', 'planet_type'] = 'UngueltigerTyp'

@@ -10,7 +10,14 @@ import time
 CACHE_FILE = Path('data') / 'planet_type_cache.csv'
 
 def load_cache(cache_path: Path) -> Dict[str, str]:
-    """Loads the planet type cache from a CSV file."""
+    """
+    Loads the planet type cache from a CSV file.
+
+    :param cache_path: The path to the cache CSV file.
+    :type cache_path: Path
+    :return: A dictionary mapping pl_name to planet_type.
+    :rtype: Dict[str, str]
+    """
     if cache_path.exists():
         try:
             df_cache = pd.read_csv(cache_path)
@@ -24,7 +31,14 @@ def load_cache(cache_path: Path) -> Dict[str, str]:
     return {}
 
 def save_cache(cache_path: Path, cache_data: Dict[str, str]):
-    """Saves the planet type cache to a CSV file."""
+    """
+    Saves the planet type cache to a CSV file.
+
+    :param cache_path: The path to the cache CSV file.
+    :type cache_path: Path
+    :param cache_data: The dictionary (pl_name -> planet_type) to save.
+    :type cache_data: Dict[str, str]
+    """
     try:
         df_cache = pd.DataFrame(list(cache_data.items()), columns=['pl_name', 'planet_type'])
         cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -35,23 +49,30 @@ def save_cache(cache_path: Path, cache_data: Dict[str, str]):
         print(f"Warnung: Unerwarteter Fehler beim Speichern des Caches: {e}")
 
 def get_nasa_planet_type(planet_name: str) -> str:
-    """Fetches description from NASA and extracts the planet type."""
+    """
+    Fetches a planet's description from NASA and extracts its type.
+
+    Scrapes the individual planet page on science.nasa.gov, searches for
+    predefined keywords ('terrestrial', 'gas giant', etc.), and returns
+    the matched type or 'Unknown'.
+
+    :param planet_name: The name of the planet to scrape.
+    :type planet_name: str
+    :return: The found planet type (e.g., 'gas giant') or 'Unknown'.
+    :rtype: str
+    """
     planet_types: List[str] = ['Neptune-like', 'terrestrial', 'gas giant', 'super Earth']
     time.sleep(0.2)
-    print(f"DEBUG [{planet_name}]: Starte Scraping...") # DEBUG
     try:
         base_url: str = "https://science.nasa.gov/exoplanet-catalog/"
         if not isinstance(planet_name, str) or not planet_name:
-             print(f"DEBUG [{planet_name}]: Ungültiger Name übersprungen.") # DEBUG
              return 'Unknown'
         formatted_name: str = planet_name.lower().replace(" ", "-")
         url: str = f"{base_url}{formatted_name}/"
         headers: Dict[str, str] = {"User-Agent": "Mozilla/5.0 (compatible; MyExoplanetPipeline/1.0)"}
         res: requests.Response = requests.get(url, timeout=15, headers=headers)
-        print(f"DEBUG [{planet_name}]: Status Code: {res.status_code}") # DEBUG
 
         if res.status_code == 404:
-            print(f"DEBUG [{planet_name}]: 404 Nicht gefunden.") # DEBUG
             return 'Unknown'
         res.raise_for_status()
 
@@ -60,29 +81,27 @@ def get_nasa_planet_type(planet_name: str) -> str:
 
         if desc_element:
             description_text: str = desc_element.get_text(strip=True).lower()
-            print(f"DEBUG [{planet_name}]: Gefundener Text (lower): '{description_text[:150]}...'") # DEBUG
             for p_type in planet_types:
                 if p_type.lower() in description_text:
                     original_type: str = next(t for t in planet_types if t.lower() == p_type.lower())
-                    print(f"DEBUG [{planet_name}]: TREFFER! '{p_type.lower()}' gefunden. Gebe '{original_type}' zurück.") # DEBUG
                     return original_type
-            print(f"DEBUG [{planet_name}]: Kein Typ-Keyword im Text gefunden.") # DEBUG
-        else:
-             print(f"DEBUG [{planet_name}]: Kein Beschreibungselement (CSS selector) gefunden.") # DEBUG
     except requests.exceptions.Timeout:
-        print(f"DEBUG [{planet_name}]: Timeout beim Scrapen.") # DEBUG
+        print(f"Warnung: Timeout beim Scrapen von {planet_name}.")
     except requests.exceptions.RequestException as e:
-        print(f"DEBUG [{planet_name}]: Anfragefehler beim Scrapen: {e}") # DEBUG
+        print(f"Warnung: Anfragefehler beim Scrapen von {planet_name}: {e}")
     except Exception as e:
-        print(f"DEBUG [{planet_name}]: Unerwarteter Fehler beim Scrapen: {e}") # DEBUG
-
-    print(f"DEBUG [{planet_name}]: Gebe 'Unknown' zurück.") # DEBUG
+        print(f"Warnung: Unerwarteter Fehler beim Scrapen von {planet_name}: {e}")
     return 'Unknown'
 
 def add_planet_type(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds the 'planet_type' column using CSV caching and sequential scraping
-    with progress reporting.
+    Enriches a DataFrame with a 'planet_type' column using CSV caching
+    and sequential scraping with progress reporting.
+
+    :param df: The DataFrame to enrich (must contain 'pl_name').
+    :type df: pd.DataFrame
+    :return: A new DataFrame with the 'planet_type' column added.
+    :rtype: pd.DataFrame
     """
     if df.empty or 'pl_name' not in df.columns:
         print("Keine Daten oder 'pl_name'-Spalte zum Anreichern mit Planetentyp vorhanden.")
