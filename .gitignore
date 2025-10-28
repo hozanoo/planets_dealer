@@ -3,3 +3,4 @@
 __pycache__/
 .idea/
 data/planet_type_cache.csv
+docs/
