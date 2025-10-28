@@ -1,12 +1,41 @@
-version: "3.9"
-
 services:
   pipeline:
     build: .
     env_file:
       - ./.env
-    volumes: # Map the local data folder to the container's data folder
+    volumes:
       - ./data:/app/data
+      # Optional: Code-Mapping für schnellere Entwicklung
+      - ./src:/app/src
+      - ./main.py:/app/main.py
+    depends_on:
+      - db
+
+  enricher:
+    build: .
+    env_file:
+      - ./.env
+    command: ["python", "enrich_facilities.py"]
+    volumes:
+      # Optional: Code-Mapping
+      - ./src:/app/src
+      - ./enrich_facilities.py:/app/enrich_facilities.py
+      - ./data:/app/data # Falls das Skript den Cache liest/schreibt
+    depends_on:
+      - db
+
+  tester: # NEUER Service
+    build: .
+    env_file:
+      - ./.env
+    command: ["python", "-m", "unittest", "discover", "tests"]
+    working_dir: /app
+    volumes:
+      # Code-Mapping, damit aktuelle Tests verwendet werden
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./main.py:/app/main.py
+      - ./enrich_facilities.py:/app/enrich_facilities.py
     depends_on:
       - db
 
