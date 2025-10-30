@@ -42,3 +42,9 @@ Der Code ist modular aufgebaut im `src/` Verzeichnis:
 5.  **Daten ansehen:**
     * **pgAdmin:** Öffne `http://localhost:8080` (Login: `admin@example.com` / `admin123`).
     * **DBeaver (oder lokal):** Verbinde dich mit `localhost` auf Port `5433` (wie in `docker-compose.yml` festgelegt).
+
+## Hinweis zum Web-Scraping
+
+Das `web_logger.py`-Modul greift auf `science.nasa.gov` zu. Das Scraping erfolgt langsam und respektvoll (`time.sleep`), um die Server nicht zu belasten, und die `robots.txt`-Datei der Seite erlaubt das Crawlen des Pfades `/exoplanet-catalog/`.
+
+**Wartbarkeit:** Der Scraper ist vom aktuellen HTML-Layout (CSS-Selektor `div.custom-field span`) der NASA-Seite abhängig. Sollte die NASA ihre Webseite ändern, muss dieser Selektor im Code angepasst werden.
