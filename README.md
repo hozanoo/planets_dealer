@@ -1,5 +1,8 @@
 # Exoplaneten ETL-Pipeline
 
+**[Zur Live-Dokumentation (GitHub Pages) ➡️](https://hozanoo.github.io/planets_dealer/index.html)**
+---
+
 Dieses Projekt lädt Exoplanetendaten von der NASA API und einer lokalen CSV-Datei, bereichert sie durch Web-Scraping und lädt das Ergebnis in eine normalisierte PostgreSQL-Datenbank (5-Tabellen-Schema).
 
 ## Projektstruktur
