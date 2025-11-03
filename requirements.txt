@@ -1,5 +1,11 @@
+# Kern-Pipeline
 requests
 pandas
 beautifulsoup4
 psycopg2-binary
 python-dotenv
+
+# Dokumentation (Sphinx)
+sphinx
+furo
+sphinx-design
