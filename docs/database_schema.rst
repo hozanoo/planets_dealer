@@ -18,8 +18,9 @@ Hier ist eine Übersicht der SQL-Objekte.
 
       **Logisches Schema**
 
-      .. figure:: images/db_logical_schema.png
+      .. figure:: images/db_logical_schema.png?v=2
          :width: 90%
+         :align: center
          :alt: Logisches Datenbankschema
 
          Abbildung: logisches Schema der relationalen Tabellenstruktur.

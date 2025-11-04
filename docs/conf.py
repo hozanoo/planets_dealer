@@ -1,47 +1,75 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+# Vollständige Doku: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-project = 'planets_delaer_pipeline'
-copyright = '2025, Hozan'
+# -- Projektinformationen ----------------------------------------------------
+project = 'planets_dealer_pipeline'
 author = 'Hozan'
+copyright = '2025, Hozan'
 release = '1.0'
+language = 'de'
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-# === ÄNDERUNG HIER ===
-# Füge 'autodoc' (für Code-Import) und 'sphinx_design' (für Tabs) hinzu
+# -- Erweiterungen -----------------------------------------------------------
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_design',  # <- Stelle sicher, dass DIESER Name hier steht
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx_design',
 ]
 
-# ... und stelle sicher, dass das Theme gesetzt ist:
-# === ENDE ÄNDERUNG ===
+autosectionlabel_prefix_document = True
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', {}),
+}
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+# -- Nummerierung für Abbildungen, Tabellen usw. -----------------------------
+numfig = True
+numfig_format = {
+    'figure': 'Abbildung %s',
+    'table': 'Tabelle %s',
+    'code-block': 'Listing %s',
+    'section': 'Abschnitt %s',
+}
 
+# -- HTML-Output -------------------------------------------------------------
+html_theme = 'pydata_sphinx_theme'
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+# Optionen für das PyData Theme
+html_theme_options = {
+    "logo": {
+        "image_light": "images/coders_light.png",
+        "image_dark": "images/coders.png",
+    },
+    "navbar_align": "content",       # zentriert oder "right"
+    "navbar_end": ["theme-switcher", "icon-links"],  # Dark/Light Toggle
+    "secondary_sidebar_items": ["page-toc"],         # Inhaltsverzeichnis rechts
+    "use_edit_page_button": False,
+    "show_nav_level": 2,             # Tiefe im Menübaum
+    "navigation_with_keys": True,    # j/k für Seiten-Navigation
+    "collapse_navigation": False,
+}
 
-# === ÄNDERUNG HIER (Optional, aber empfohlen) ===
-# Wechsle zu einem moderneren Theme
-#html_theme = 'sphinx_rtd_theme'
-html_theme = 'furo'
-# oder 'sphinx_rtd_theme' (nach 'pip install sphinx-rtd-theme')
-# html_theme = 'sphinx_rtd_theme'
-# === ENDE ÄNDERUNG ===
-
+# -- Logos und statische Dateien --------------------------------------------
+html_logo = "images/coders.png"
 html_static_path = ['_static', 'images']
-html_logo = 'images/coders.png'
+
+# Optional: Farbschema (hell/dunkel)
+pygments_style = 'sphinx'
+pygments_dark_style = 'monokai'
+
+# Optional: Anpassbare Fußzeile oder Social-Links
+html_theme_options["icon_links"] = [
+    {
+        "name": "GitHub",
+        "url": "https://github.com/hozanoo/planets_dealer",
+        "icon": "fa-brands fa-github",
+    },
+]

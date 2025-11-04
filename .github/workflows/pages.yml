@@ -4,6 +4,8 @@ on:
   # Wird ausgeführt bei jedem Push auf den master-Branch
   push:
     branches: [ "master" ] # Ändere dies zu "main"
+  pull_request:
+    branches: ["master"]
 
 # Berechtigungen für das Deployment
 permissions:
@@ -31,7 +33,7 @@ jobs:
 
       - name: Baue die HTML-Seiten
         run: |
-          python -m sphinx -b html docs docs/_build/html
+          python -m sphinx -E -a -b html docs docs/_build/html
 
       - name: Lade Artefakt hoch
         # Lädt die gebauten HTML-Seiten hoch
