@@ -24,7 +24,7 @@ extensions = [
 
 autosectionlabel_prefix_document = True
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', {}),
+    'python': ('https://docs.python.org/3', None),
 }
 
 templates_path = ['_templates']
@@ -61,7 +61,7 @@ html_theme_options.update({
 })
 
 # -- Logos und statische Dateien --------------------------------------------
-html_logo = "images/coders.png"
+#html_logo = "images/coders.png"
 html_static_path = ['_static', 'images']
 html_css_files = ["custom.css"]
 

@@ -1,7 +1,10 @@
-/* Logo-Größe in der Navbar */
+/* docs/_static/custom.css */
 :root {
-  --pst-logo-height: 3.0rem;   /* 2.5–3.5rem */
+  --pst-logo-height: 144px;             /* PyData-Variable */
+  --pst-header-height: 84px;           /* etwas mehr Platz in der Navbar */
 }
-@media (min-width: 1200px) {
-  :root { --pst-logo-height: 3.25rem; }
+.navbar-brand img {
+  height: 144px !important;
+  max-height: 84px !important;
+  width: auto !important;
 }
