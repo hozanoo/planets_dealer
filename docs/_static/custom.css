@@ -1,0 +1,7 @@
+/* Logo-Größe in der Navbar */
+:root {
+  --pst-logo-height: 3.0rem;   /* 2.5–3.5rem */
+}
+@media (min-width: 1200px) {
+  :root { --pst-logo-height: 3.25rem; }
+}

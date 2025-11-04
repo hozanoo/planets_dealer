@@ -56,10 +56,14 @@ html_theme_options = {
     "navigation_with_keys": True,    # j/k für Seiten-Navigation
     "collapse_navigation": False,
 }
+html_theme_options.update({
+    "header_links_before_dropdown": 8,  # Standard ist kleiner; höher setzen
+})
 
 # -- Logos und statische Dateien --------------------------------------------
 html_logo = "images/coders.png"
 html_static_path = ['_static', 'images']
+html_css_files = ["custom.css"]
 
 # Optional: Farbschema (hell/dunkel)
 pygments_style = 'sphinx'
