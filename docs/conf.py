@@ -46,7 +46,7 @@ html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
     "logo": {
         "image_light": "images/coders_light.png",
-        "image_dark": "images/coders.png",
+        "image_dark": "images/coders_light-modified.png",
     },
     "navbar_align": "content",       # zentriert oder "right"
     "navbar_end": ["theme-switcher", "icon-links"],  # Dark/Light Toggle
