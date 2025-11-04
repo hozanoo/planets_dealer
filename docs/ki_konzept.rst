@@ -1,14 +1,15 @@
+=================
 KI-Modell Konzept
 =================
 
 Motivation und Ziel
 -------------------
-Dieses Projekt zielt darauf ab, ein **KI-Modell zu entwickeln, das fehlende oder inkonsistente astrophysikalische Parameter** von Exoplaneten schätzen kann – insbesondere **Masse, Radius und Temperatur**.
+Dieses Projekt zielt darauf ab, ein **KI-Modell vorzuschlagen**, das fehlende oder inkonsistente astrophysikalische Parameter von Exoplaneten schätzen kann – insbesondere **Masse, Radius und Temperatur**.
 Diese Werte sind entscheidend für die Berechnung des **Earth Similarity Index (ESI)** und der **habitablen Zone (HZ)**, fehlen jedoch häufig in den astronomischen Datensätzen oder wurden nach unterschiedlichen wissenschaftlichen Methoden ermittelt.
 
-Das geplante Modell soll also eine **physikalisch konsistente Imputation** leisten:
-Es ergänzt fehlende Werte, ohne bekannte physikalische Zusammenhänge (z. B. Masse–Radius–Beziehung) zu verletzen.
-Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habitability* (Bewohnbarkeit) erzeugt werden.
+Das **vorgeschlagene Modellkonzept** soll also eine **physikalisch konsistente Imputation** ermöglichen:
+Es **soll in der Lage sein**, fehlende Werte zu ergänzen, ohne bekannte physikalische Zusammenhänge (z. B. Masse–Radius–Beziehung) zu verletzen.
+Dadurch **könnten** vollständigere und konsistentere Bewertungen der Planet Habitability (Bewohnbarkeit) erzeugt werden.
 
 .. tab-set::
 
@@ -19,7 +20,7 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
       Die Idee eines **PINN** ist, dass nicht nur der klassische Datenfehler (z. B. mittlere Abweichung) im Training berücksichtigt wird,
       sondern auch physikalische Gleichungen direkt in die **Loss-Funktion** integriert werden.
 
-      Die Loss-Funktion könnte zum Beispiel so aussehen:
+      Die Loss-Funktion **könnte** zum Beispiel so aussehen:
 
       .. math::
 
@@ -29,15 +30,15 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
          + \lambda_2(v_e - \sqrt{M/R})^2
          + \lambda_3(ESI_{\text{pred}} - ESI_{\text{phys}})^2
 
-      Dabei sorgen die zusätzlichen Terme für physikalische Konsistenz:
+      Dabei **würden** die zusätzlichen Terme für physikalische Konsistenz sorgen:
 
       * :math:`\rho = M / R^3` (Dichte)
       * :math:`v_e = \sqrt{M / R}` (Fluchtgeschwindigkeit)
       * :math:`ESI = (S(R)\,S(\rho)\,S(v_e)\,S(T))^{1/4}` (Gesamtindex)
 
-      Das Gewicht :math:`\lambda_i` bestimmt, wie stark die Physikbedingungen gegenüber dem Datenfehler gewichtet werden.
+      Das Gewicht :math:`\lambda_i` **würde bestimmen**, wie stark die Physikbedingungen gegenüber dem Datenfehler gewichtet werden.
 
-      Die Trainingsdaten stammen aus mehreren Quellen und sind in der ETL-Pipeline bereits zusammengeführt worden:
+      Die **vorgesehenen** Trainingsdaten stammen aus mehreren Quellen und sind in der ETL-Pipeline bereits zusammengeführt worden:
 
       * **NASA Exoplanet Archive (PSCompPars, Stellarhosts)** — physikalische und orbitale Parameter:
         ``planet_radius_earth_radii``, ``planet_mass_earth_masses``, ``equilibrium_temperature_k``, ``st_teff``, ``st_lum`` usw.
@@ -63,7 +64,7 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
          :width: 80%
          :alt: Habitability Comparison Dashboard
 
-      Abweichungen zwischen CSV- und berechneten HZ-Klassifikationen zeigen Daten-Inkonsistenzen – Motivation für KI-Korrektur.
+      Abweichungen zwischen CSV- und berechneten HZ-Klassifikationen zeigen Daten-Inkonsistenzen – **die Motivation für eine KI-basierte Korrektur.**
 
       ---
 
@@ -86,7 +87,7 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
          :width: 80%
          :alt: ESI Data Completeness Dashboard
 
-      Dieses Dashboard zeigt, dass viele Datensätze mindestens einen fehlenden ESI-Parameter haben – eine optimale Anwendung für KI-basierte Schätzungen.
+      Dieses Dashboard zeigt, dass viele Datensätze mindestens einen fehlenden ESI-Parameter haben – eine optimale **Anwendungsgrundlage** für KI-basierte Schätzungen.
 
       ---
 
@@ -103,7 +104,7 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
          :alt: Method Bias Dashboard
 
       Diese Analyse zeigt, dass die **Beobachtungsmethode selbst ein Bias-Faktor** ist.
-      Daher sollten zusätzlich methodische Merkmale (`method_name`, `facility_name`, `discovery_year`) ins Training einfließen,
+      Daher **sollten** zusätzlich methodische Merkmale (`method_name`, `facility_name`, `discovery_year`) **für das Training berücksichtigt werden**,
       um Bias-Effekte zu lernen und auszugleichen.
 
       ---
@@ -114,13 +115,13 @@ Dadurch können *vollständigere und konsistentere Bewertungen der Planet Habita
       2. Dashboard 2 → fehlende ESI-Daten.
       3. Dashboard 3 → methodische Biases.
 
-      → Begründung für ein erklärbares, physik-informiertes KI-Modell zur konsistenten Bewohnbarkeitsbewertung.
+      → **Dies begründet den Vorschlag** für ein erklärbares, physik-informiertes KI-Modell zur konsistenten Bewohnbarkeitsbewertung.
 
    .. tab-item:: Methode 2 – Platzhalter für weitere Ideen
       :sync: m2
 
       Dieser Tab dient als **Platzhalter für zukünftige Ansätze**.
-      Beispielhaft könnten hier später alternative Methoden ergänzt werden – z. B.:
+      Beispielhaft **könnten** hier später alternative Methoden ergänzt werden – z. B.:
 
       * ein klassifikationsbasiertes Modell, das den HZ-Status direkt vorhersagt,
       * oder eine Bayes-basierte Unsicherheitsabschätzung für geschätzte Parameter.
