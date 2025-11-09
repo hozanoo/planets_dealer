@@ -94,6 +94,13 @@ class TestExoplanetDBIntegration(unittest.TestCase):
         Runs BEFORE EACH individual test method.
         Connects to the clean test database and recreates the full schema.
         """
+        # ---------- Schöner Header pro Test ----------
+        test_name = self._testMethodName
+        print("\n" + "=" * 60)
+        print(test_name)
+        print("=" * 60)
+        # --------------------------------------------
+
         os.environ['DB_NAME_ORIG'] = os.environ.get('DB_NAME', '')
         os.environ['DB_NAME'] = TEST_DB_NAME
         try:
@@ -101,7 +108,7 @@ class TestExoplanetDBIntegration(unittest.TestCase):
             self.db._recreate_tables()
             self.cursor = self.db.connection.cursor()
         except DatabaseError as e:
-            self.fail(f"Fehler beim Verbinden mit der Test-DB in setUp: {e}")
+            self.fail(...)
 
     def tearDown(self):
         """
