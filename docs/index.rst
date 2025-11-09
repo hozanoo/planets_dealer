@@ -11,6 +11,11 @@ Der Prozess umfasst:
 * **Load:** Speichern der aufbereiteten Daten in einer PostgreSQL-Datenbank.
 * **Analyse:** Ausführen von visuellen Analysen in Power BI.
 
+.. image:: images/architecture_planets_dealer.png
+   :alt: Architekturübersicht ETL-Pipeline Planets Dealer
+   :align: center
+   :width: 700
+
 Das gesamte Projekt wird mit Docker containerisiert, über Git (GitHub) versioniert und durch eine `README.md`-Datei sowie diese Sphinx-Dokumentation (als Eigenleistung) dokumentiert.
 
 Da es sich um ein Miniprojekt mit begrenzter Zeit handelt, ist es als Proof-of-Concept zu verstehen. Viele Bereiche (z.B. Fehlerbehandlung, Testabdeckung, Anreicherungslogik) könnten weiter ausgebaut und optimiert werden.
@@ -36,6 +41,7 @@ Der Code ist modular aufgebaut im ``src/`` Verzeichnis:
 * ``pipeline.py``: Orchestriert den gesamten ETL-Lauf.
 * ``main.py``: Der Startpunkt des Projekts.
 * ``tests/``: Enthält Integrationstests für die Datenbanklogik (``save_data.py``).
+
 
 Ausführung (mit Docker)
 -------------------------

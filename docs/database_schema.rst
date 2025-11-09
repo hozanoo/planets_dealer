@@ -16,6 +16,15 @@ Hier ist eine Übersicht der SQL-Objekte.
       * **detection_methods**: Lookup-Tabelle der Entdeckungsmethoden.
       * **discovery_facilities**: Lookup-Tabelle der Observatorien.
 
+      **ER-Diagramm**
+
+      .. figure:: images/er_model.png
+         :width: 90%
+         :align: center
+         :alt: Konzeptionelles ER-Diagramm des Datenmodells
+
+         Abbildung: logisches Schema der relationalen Tabellenstruktur.
+
       **Logisches Schema**
 
       .. figure:: images/db_logical_schema.png
